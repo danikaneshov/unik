@@ -7,9 +7,11 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
-<body class="antialiased min-h-screen flex flex-col bg-[#020202] text-white">
+<body class="antialiased min-h-screen flex flex-col bg-black text-white relative z-0">
+  <div class="absolute inset-0 z-[-1] opacity-20 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9IiNmZjAwMDAiIGZpbGwtb3BhY2l0eT0iMC41Ii8+PC9zdmc+')] pointer-events-none"></div>
+  <div class="absolute inset-0 z-[-2] pointer-events-none bg-gradient-to-b from-[#110000] via-[#020202] to-[#020202]"></div>
 
-  <div class="flex-grow max-w-6xl mx-auto w-full p-6 lg:p-10">
+  <div class="flex-grow max-w-6xl mx-auto w-full p-6 lg:p-10 relative z-10">
     
     <!-- Admin Header -->
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4 reveal active">
@@ -31,22 +33,22 @@
       <div class="glass-panel tilt-card p-6 rounded-2xl border-t border-t-white/10 relative overflow-hidden reveal active delay-100 hover:scale-105 transition-transform cursor-pointer">
         <div class="absolute top-0 right-0 -m-10 w-24 h-24 bg-blue-600 rounded-full blur-2xl opacity-30 transition-all hover:scale-150"></div>
         <div class="tilt-content">
-          <h3 class="text-gray-400 font-medium text-sm mb-1 uppercase tracking-wider">Заявок сегодня</h3>
-          <p class="text-4xl font-black text-white drop-shadow-md">24</p>
+          <h3 class="text-gray-400 font-medium text-sm mb-1 uppercase tracking-wider">Всего за сегодня</h3>
+          <p id="stat-total" class="text-4xl font-black text-white drop-shadow-md">0</p>
         </div>
       </div>
       <div class="glass-panel tilt-card p-6 rounded-2xl border-t border-t-white/10 relative overflow-hidden reveal active delay-200 hover:scale-105 transition-transform cursor-pointer">
         <div class="absolute top-0 right-0 -m-10 w-24 h-24 bg-green-600 rounded-full blur-2xl opacity-30 transition-all hover:scale-150"></div>
         <div class="tilt-content">
           <h3 class="text-gray-400 font-medium text-sm mb-1 uppercase tracking-wider">Завершено</h3>
-          <p class="text-4xl font-black text-white drop-shadow-md">18</p>
+          <p id="stat-done" class="text-4xl font-black text-green-400 drop-shadow-md">0</p>
         </div>
       </div>
       <div class="glass-panel tilt-card p-6 rounded-2xl border-t border-t-white/10 relative overflow-hidden reveal active delay-300 hover:scale-105 transition-transform cursor-pointer">
-        <div class="absolute top-0 right-0 -m-10 w-24 h-24 bg-yellow-600 rounded-full blur-2xl opacity-30 transition-all hover:scale-150"></div>
+        <div class="absolute top-0 right-0 -m-10 w-24 h-24 bg-yellow-600 rounded-full blur-2xl opacity-30 transition-all hover:scale-150 animate-pulse"></div>
         <div class="tilt-content">
-          <h3 class="text-gray-400 font-medium text-sm mb-1 uppercase tracking-wider">В ожидании</h3>
-          <p class="text-4xl font-black text-white drop-shadow-md">6</p>
+          <h3 class="text-gray-400 font-medium text-sm mb-1 uppercase tracking-wider">В ожидании/Процессе</h3>
+          <p id="stat-active" class="text-4xl font-black text-yellow-400 drop-shadow-md">0</p>
         </div>
       </div>
     </div>
@@ -58,9 +60,10 @@
           <svg class="w-5 h-5 text-red-500 group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
           Текущие бронирования
         </h2>
-        <button onclick="window.location.reload()" class="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition ripple-button" title="Обновить">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-        </button>  
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-2 rounded-full bg-green-500 animate-ping"></div>
+          <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">LIVE SYNC</span>
+        </div>
       </div>
       
       <div class="overflow-x-auto">
@@ -68,10 +71,10 @@
           <thead>
             <tr class="bg-gray-900/30 text-gray-400 border-b border-gray-800 text-xs font-bold uppercase tracking-wider">
               <th class="p-4 rounded-tl-lg">Клиент (Email)</th>
-              <th class="p-4">Локация / Мойка</th>
+              <th class="p-4">Детали (Локация & Фишки)</th>
               <th class="p-4">Время заявки</th>
-              <th class="p-4">Статус</th>
-              <th class="p-4 text-right">Управление</th>
+              <th class="p-4">Текущий Статус</th>
+              <th class="p-4 text-right">Действия</th>
             </tr>
           </thead>
           <tbody id="bookings-table" class="divide-y divide-gray-800/50">
