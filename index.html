@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WashFit - Премиальная подписка на автомойки</title>
+  
+  <!-- Tailwind CSS Configuration mapping to our CSS Variables -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              400: 'var(--brand-400)',
+              500: 'var(--brand-500)',
+              600: 'var(--brand-600)',
+              900: 'var(--brand-900)'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+  <div id="cyber-cursor" class="pointer-events-none fixed top-0 left-0 w-6 h-6 rounded-full border-2 border-brand-500 z-[9999] transition-transform duration-75 ease-out shadow-[0_0_20px_rgba(var(--brand-rgb),1)] mix-blend-screen hidden md:block opacity-0"></div>
+  <div id="cyber-cursor-dot" class="pointer-events-none fixed top-0 left-0 w-1.5 h-1.5 bg-brand-400 rounded-full z-[9999] transition-transform duration-0 shadow-[0_0_10px_rgba(var(--brand-rgb),1)] hidden md:block opacity-0"></div>
+
+  <!-- Theme Switcher Floating Component -->
+  <div class="fixed left-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2 bg-black/40 p-2 rounded-2xl backdrop-blur-md border border-white/10 hover:shadow-[0_0_20px_rgba(var(--brand-rgb),0.3)] transition-all">
+    <button title="Classic Blue" onclick="document.body.className=''" class="w-8 h-8 rounded-full bg-blue-600 border-2 border-transparent hover:border-white transition-all hover:scale-110 shadow-lg"></button>
+    <button title="Cyberpunk Pink" onclick="document.body.className='theme-cyberpunk'" class="w-8 h-8 rounded-full bg-pink-600 border-2 border-transparent hover:border-white transition-all hover:scale-110 shadow-lg"></button>
+    <button title="Acid Green" onclick="document.body.className='theme-acid'" class="w-8 h-8 rounded-full bg-lime-600 border-2 border-transparent hover:border-white transition-all hover:scale-110 shadow-lg"></button>
+    <button title="Neon Orange" onclick="document.body.className='theme-orange'" class="w-8 h-8 rounded-full bg-orange-600 border-2 border-transparent hover:border-white transition-all hover:scale-110 shadow-lg"></button>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="glass-header sticky top-0 z-40 px-6 py-4 flex flex-wrap justify-between items-center transition-all duration-300">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-[0_0_15px_rgba(37,99,235,0.6)] animate-pulse">W</div>
+      <h1 class="text-2xl font-black tracking-tight uppercase text-white hover:scale-105 transition-transform cursor-pointer">WASH<span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">FIT</span></h1>
+    </div>
+    
+    <!-- Central Menu (Desktop) -->
+    <ul class="hidden md:flex items-center gap-8 text-sm font-bold text-gray-300">
+      <li><a href="#about" class="hover:text-brand-400 hover:scale-105 inline-block transition-all tracking-wide">О Сервисе</a></li>
+      <li><a href="#tariffs" class="hover:text-brand-400 hover:scale-105 inline-block transition-all tracking-wide">Тарифы</a></li>
+      <li><a href="#partners" class="hover:text-brand-400 hover:scale-105 inline-block transition-all tracking-wide">Сеть Моек</a></li>
+    </ul>
+    
+    <!-- Auth Controls -->
+    <div id="auth-section" class="flex gap-4 fade-in">
+      <button id="login-btn" class="ripple-button px-5 py-2.5 rounded-xl font-bold bg-white/10 hover:bg-white/20 text-white backdrop-blur-md transition-all duration-300 text-sm border border-white/10 shadow-lg hover:-translate-y-0.5">Войти</button>
+    </div>
+    
+    <!-- User Profile Controls -->
+    <div id="user-section" class="hidden items-center gap-4 fade-in">
+      <button id="open-dashboard-btn" class="ripple-button flex items-center gap-3 px-4 py-2 rounded-xl bg-brand-900/30 border border-brand-500/30 hover:bg-brand-900/50 transition-all hover:-translate-y-0.5 group">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-900 flex items-center justify-center shadow-[0_0_10px_rgba(var(--brand-rgb),0.6)] group-hover:scale-110 transition-transform">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        </div>
+        <div class="text-left hidden sm:block">
+          <span class="block text-xs text-brand-400 font-bold uppercase tracking-wider">Кабинет</span>
+          <span id="nav-balance" class="block text-sm font-black text-white">--- WP</span>
+        </div>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="relative px-6 py-20 lg:py-28 flex flex-col items-center text-center overflow-hidden">
+    <div class="absolute inset-0 z-[-1] opacity-30 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAzNHYtbDItMi0ybDJ2LTJoLTR2MmwtMiAybC0yLTJ2MmwtMiAybC0yLTJ2LTJoLTR2MmwzbC0yLTJ2MmwtMiAybC0yLTJINlYyaDUydjI2aC0ydjJoLTR2LTJoLTR2MmgtMnYyaC0yeiIgZmlsbD0iIzMzMyIgZmlsbC1vcGFjaXR5PSIwLjEiLz48L2c+PC9zdmc+')] parallax-bg"></div>
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-brand-600 rounded-full blur-[120px] opacity-20 pointer-events-none animate-pulse"></div>
+    <div class="absolute top-20 -right-20 w-80 h-80 bg-brand-400 rounded-full blur-[100px] opacity-10 pointer-events-none delay-500 animate-pulse"></div>
+
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-900/30 border border-brand-500/30 text-brand-400 text-xs font-bold uppercase tracking-wider mb-8 slide-up hover:scale-105 transition-transform cursor-pointer shadow-[0_0_15px_rgba(var(--brand-rgb),0.3)]">
+      <span class="w-2 h-2 rounded-full bg-brand-500 shadow-[0_0_8px_rgba(var(--brand-rgb),0.8)]"></span> Валюта WashPoints
+    </div>
+    
+    <h2 class="text-5xl md:text-7xl font-black mb-6 leading-tight slide-up delay-100 hover-3d">
+      Твой автомобиль <br/><span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-purple-400 to-brand-600" style="background-size: 200% auto; animation: gradientX 3s linear infinite;">всегда идеален</span>
+    </h2>
+    
+    <p class="text-xl text-gray-400 max-w-2xl mb-10 slide-up delay-200">Единая подписка на лучшие автомойки города. Экономь время, деньги и наслаждайся блеском своей машины. Оплата внутренними баллами - WashPoints!</p>
+    
+    <div class="flex gap-4 slide-up delay-300 mb-14">
+      <a href="#tariffs" class="ripple-button px-8 py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-xl font-bold text-lg shadow-[0_0_20px_rgba(var(--brand-rgb),0.4)] transition-all hover:-translate-y-1 hover:shadow-[0_0_30px_rgba(var(--brand-rgb),0.6)]">Выбрать тариф</a>
+      <a href="#locations" class="ripple-button px-8 py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl font-bold text-lg backdrop-blur-sm transition-all hover:-translate-y-1">Смотреть локации</a>
+    </div>
+
+    <!-- Floating Statistics -->
+    <div class="flex flex-wrap justify-center gap-4 md:gap-8 slide-up delay-400 w-full max-w-4xl">
+      <div class="glass-panel px-6 py-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:-translate-y-1 transition-transform cursor-default">
+        <div class="w-12 h-12 rounded-full bg-brand-500/20 flex items-center justify-center text-2xl">⭐️</div>
+        <div class="text-left">
+          <p class="text-white font-black text-xl leading-tight">4.9/5</p>
+          <p class="text-xs text-gray-400 uppercase tracking-widest font-bold">Оценка клиентов</p>
+        </div>
+      </div>
+      <div class="glass-panel px-6 py-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:-translate-y-1 transition-transform cursor-default">
+        <div class="w-12 h-12 rounded-full bg-brand-500/20 flex items-center justify-center text-2xl">🚗</div>
+        <div class="text-left">
+          <p class="text-white font-black text-xl leading-tight">1,500+</p>
+          <p class="text-xs text-gray-400 uppercase tracking-widest font-bold">Активных подписок</p>
+        </div>
+      </div>
+      <div class="glass-panel px-6 py-4 rounded-2xl flex items-center gap-4 border border-white/5 hover:-translate-y-1 transition-transform cursor-default">
+        <div class="w-12 h-12 rounded-full bg-brand-500/20 flex items-center justify-center text-2xl">⚡️</div>
+        <div class="text-left">
+          <p class="text-white font-black text-xl leading-tight">50+</p>
+          <p class="text-xs text-gray-400 uppercase tracking-widest font-bold">Моек по городу</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl mx-auto w-full px-6 space-y-32 pb-20">
+    
+    <!-- Tariffs -->
+    <section id="tariffs" class="scroll-mt-24 reveal">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl lg:text-4xl font-black mb-4 uppercase tracking-tight">Тарифы</h2>
+        <p class="text-gray-500">Оплата баллами WashPoints (WP). Кэшбэк 5% на все тарифы!</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center perspective-1000">
+        
+        <!-- 1 Month -->
+        <div class="glass-panel tilt-card p-8 rounded-3xl hover:border-brand-500/50 transition-all duration-300 transform hover:-translate-y-3 cursor-pointer">
+          <div class="tilt-content">
+            <h3 class="text-xl font-bold text-gray-400 mb-2">Старт</h3>
+            <div class="text-3xl font-black uppercase mb-4 text-white">1 Месяц</div>
+            <div class="text-4xl font-bold text-white mb-6">15 000 <span class="text-xl text-brand-400 font-bold">WP</span></div>
+            <ul class="space-y-4 mb-8 text-gray-300 text-sm">
+              <li class="flex items-center gap-3"><svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 4 комплексные мойки</li>
+              <li class="flex items-center gap-3"><svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Доступ ко всем локациям</li>
+              <li class="flex items-center gap-3"><svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Кэшбэк 750 WP</li>
+            </ul>
+            <button onclick="window.buyTariff('Старт (1 Месяц)', 15000, this)" class="ripple-button w-full bg-white/5 hover:bg-white text-gray-300 hover:text-black font-bold py-3.5 border border-white/10 rounded-xl transition-all duration-300">Купить</button>
+          </div>
+        </div>
+        
+        <!-- 6 Months (Hit) -->
+        <div class="glass-panel tilt-card p-8 rounded-3xl border-2 border-brand-500 relative transform md:-translate-y-6 shadow-[0_0_40px_rgba(var(--brand-rgb),0.2)] bg-gradient-to-b from-brand-900/40 to-transparent cursor-pointer z-10 hover:shadow-[0_0_60px_rgba(var(--brand-rgb),0.4)]">
+          <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-brand-500 to-brand-400 text-white text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(var(--brand-rgb),0.5)] animate-pulse">Хит продаж</div>
+          <div class="tilt-content">
+            <h3 class="text-xl font-bold text-brand-400 mb-2 drop-shadow-md">Оптимум</h3>
+            <div class="text-3xl font-black uppercase mb-4 text-white">6 Месяцев</div>
+            <div class="text-5xl font-bold text-white mb-2 drop-shadow-lg">75 000 <span class="text-xl text-brand-400 font-bold">WP</span></div>
+            <p class="text-green-400 text-sm font-bold mb-6">Выгода 15 000 WP</p>
+            <ul class="space-y-4 mb-8 text-gray-200 text-sm">
+              <li class="flex items-center gap-3"><svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 24 комплексные мойки</li>
+              <li class="flex items-center gap-3"><svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Бесплатный чернитель шин</li>
+              <li class="flex items-center gap-3"><svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Кэшбэк 3 750 WP</li>
+            </ul>
+            <button onclick="window.buyTariff('Оптимум (6 Месяцев)', 75000, this)" class="ripple-button w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-bold py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(var(--brand-rgb),0.5)] hover:-translate-y-1 border border-brand-400/30">Купить</button>
+          </div>
+        </div>
+        
+        <!-- 1 Year -->
+        <div class="glass-panel tilt-card p-8 rounded-3xl hover:border-brand-500/50 transition-all duration-300 transform hover:-translate-y-3 cursor-pointer">
+          <div class="tilt-content">
+            <h3 class="text-xl font-bold text-gray-400 mb-2">Премиум</h3>
+            <div class="text-3xl font-black uppercase mb-4 text-white">1 Год</div>
+            <div class="text-4xl font-bold text-white mb-2">130 000 <span class="text-xl text-brand-400 font-bold">WP</span></div>
+            <p class="text-green-400 text-sm font-bold mb-6">Выгода 50 000 WP</p>
+            <ul class="space-y-4 mb-8 text-gray-300 text-sm">
+              <li class="flex items-center gap-3"><svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 48 комплексных моек</li>
+              <li class="flex items-center gap-3"><svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> VIP статус во всех точках</li>
+              <li class="flex items-center gap-3"><svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Кэшбэк 6 500 WP</li>
+            </ul>
+            <button onclick="window.buyTariff('Премиум (1 Год)', 130000, this)" class="ripple-button w-full bg-white/5 hover:bg-white text-gray-300 hover:text-black font-bold py-3.5 border border-white/10 rounded-xl transition-all duration-300">Купить</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Locations -->
+    <section id="locations" class="scroll-mt-24 reveal">
+      <div class="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
+        <div>
+          <h2 class="text-3xl lg:text-4xl font-black mb-4 uppercase tracking-tight">Локации в Астане</h2>
+          <p class="text-gray-500">Выбирайте удобную точку на карте и следите за очередями онлайн</p>
+        </div>
+        <a href="admin.html" class="ripple-button text-sm px-4 py-2 bg-red-900/20 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500 hover:text-white flex items-center gap-2 transition-colors">Панель партнера <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></a>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="washes-container">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Custom User Dashboard Sidebar -->
+  <div id="dashboard-overlay" class="dashboard-overlay"></div>
+  <aside id="dashboard-drawer" class="dashboard-drawer overflow-y-auto">
+    <!-- Drawer Header -->
+    <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-black/50 sticky top-0 z-50 backdrop-blur-md">
+      <h2 class="text-2xl font-black uppercase tracking-wider text-white">Личный <span class="text-brand-500">Кабинет</span></h2>
+      <button id="close-dashboard-btn" class="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition ripple-button">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    
+    <div class="p-6 space-y-8">
+      
+      <!-- Balance Card -->
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 to-gray-900 border border-brand-500/30 p-6 shadow-2xl">
+        <div class="absolute top-0 right-0 -m-10 w-32 h-32 bg-brand-400 rounded-full blur-[50px] opacity-20 animate-pulse"></div>
+        <div class="relative z-10">
+          <p class="text-brand-200 text-sm font-bold uppercase tracking-widest mb-1">Ваш баланс</p>
+          <div class="flex items-baseline gap-2 mb-6">
+            <span id="dash-balance" class="text-5xl font-black text-white drop-shadow-md">0</span>
+            <span class="text-xl font-bold text-brand-400">WP</span>
+          </div>
+          
+          <button id="test-topup-btn" class="ripple-button w-full py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-white font-bold transition flex justify-center items-center gap-2 text-sm backdrop-blur-md">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            Тестовое пополнение (+100K WP)
+          </button>
+        </div>
+      </div>
+
+      <!-- Weather / Wash Forecast -->
+      <div>
+        <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2 uppercase tracking-wide">
+          <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          Индекс Мойки
+        </h3>
+        <div class="p-5 rounded-2xl bg-gradient-to-br from-blue-900/50 to-gray-900 border border-blue-500/30 flex items-center gap-4">
+          <div class="text-4xl">☀️</div>
+          <div>
+            <p class="text-white font-bold mb-1">Идеально для мойки</p>
+            <p class="text-xs text-gray-400">Ближайшие 5 дней без осадков. Кузов останется чистым надолго!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Wash Tracker (Dynamic) -->
+      <div id="live-tracker-section" class="hidden">
+        <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-wide">
+          <span class="w-3 h-3 rounded-full bg-brand-500 animate-pulse"></span>
+          Статус Мойки
+        </h3>
+        <div class="p-6 rounded-2xl bg-gray-900 border border-brand-500/30">
+          <h4 id="tracker-wash-name" class="text-white font-bold mb-4">Ждем локацию...</h4>
+          
+          <div class="progress-stepper">
+            <div class="progress-bar-fill" id="tracker-bar" style="width: 0%;"></div>
+            <!-- Steps are managed dynamically locally or via JS class manip -->
+            <div class="progress-step active" id="step-0"><div class="step-circle"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div><div class="step-label">В очереди</div></div>
+            <div class="progress-step" id="step-1"><div class="step-circle"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg></div><div class="step-label">Процесс</div></div>
+            <div class="progress-step" id="step-2"><div class="step-circle"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div><div class="step-label">Готово</div></div>
+          </div>
+          <p class="text-xs text-gray-400 text-center mt-2">Статус обновляется в реальном времени...</p>
+        </div>
+      </div>
+
+      <!-- QR / Digital Pass -->
+      <div>
+        <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2 uppercase tracking-wide">
+          <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+          Мой Пропуск
+        </h3>
+        <div class="p-6 rounded-2xl bg-gray-900 border border-gray-800 text-center relative overflow-hidden group">
+          <p class="text-xs text-gray-500 uppercase tracking-widest mb-4">Нажмите для отображения кода</p>
+          
+          <div class="blur-hide inline-flex flex-col items-center" id="qr-secret-wrapper" onclick="this.classList.toggle('revealed')">
+            <div id="qrcode" class="p-2 bg-white rounded-lg mb-4"></div>
+            <div class="text-2xl font-mono font-black text-white tracking-[0.25em]" id="user-pin">PIN-CODE</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- My Garage -->
+      <div>
+        <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2 uppercase tracking-wide">
+          <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          Мой Гараж
+        </h3>
+        <div class="p-5 rounded-2xl bg-gray-900 border border-gray-800">
+          <div id="garage-display" class="hidden flex-col gap-4 w-full mb-4">
+             <!-- Rendered by JS -->
+          </div>
+          
+          <div id="garage-setup" class="space-y-3">
+            <input type="text" id="car-model" placeholder="Например: Toyota Camry" class="w-full p-3 bg-black border border-gray-700 rounded-xl text-white outline-none focus:border-brand-500 text-sm">
+            <input type="text" id="car-number" placeholder="Номер (напр: 123 ABC 01)" class="w-full p-3 bg-black border border-gray-700 rounded-xl text-white outline-none focus:border-brand-500 text-sm uppercase">
+            <button id="garage-save-btn" class="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-3 rounded-xl transition text-sm ripple-button">Добавить авто</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Promocodes -->
+      <div>
+        <h3 class="text-lg font-bold text-white mb-3 flex items-center gap-2 uppercase tracking-wide">
+          <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path></svg>
+          Активация промокода
+        </h3>
+        <div class="flex gap-2">
+          <input type="text" id="promo-input" placeholder="WASH2026" class="flex-grow p-3 bg-gray-900/80 border border-gray-700/80 rounded-xl text-white outline-none focus:border-green-500 uppercase placeholder-gray-600 transition tracking-widest font-mono text-sm">
+          <button id="promo-submit-btn" class="ripple-button px-5 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition shadow-[0_0_15px_rgba(16,185,129,0.3)] text-sm">Ввести</button>
+        </div>
+      </div>
+
+      <div class="pt-4 mt-auto">
+        <button id="drawer-logout-btn" class="w-full ripple-button px-4 py-3 rounded-xl font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all border border-red-500/20 hover:border-red-400 hover:text-white">Выйти из аккаунта</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Auth Modal snippet from previous config -->
+  <div id="auth-modal" class="fixed inset-0 z-[2000] flex items-center justify-center px-4 hidden opacity-0 transition-opacity duration-300">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" id="close-modal-btn"></div>
+    <div class="glass-panel w-full max-w-md p-8 rounded-3xl relative z-10 transform scale-95 transition-transform duration-300 border border-brand-900/30" id="modal-content-box">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-900/40 to-brand-600/20 text-brand-400 flex items-center justify-center mx-auto mb-4 border border-brand-500/30">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        </div>
+        <h3 id="auth-title" class="text-3xl font-black uppercase text-white tracking-wide">Вход</h3>
+      </div>
+      <div class="space-y-5">
+        <div class="group">
+          <input type="email" id="auth-email" placeholder="Email" class="w-full p-4 bg-gray-900/60 border border-gray-700/80 rounded-xl text-white outline-none focus:border-brand-500 transition-all">
+        </div>
+        <div class="group">
+          <input type="password" id="auth-password" placeholder="Пароль" class="w-full p-4 bg-gray-900/60 border border-gray-700/80 rounded-xl text-white outline-none focus:border-brand-500 transition-all">
+        </div>
+        <button id="auth-submit-btn" class="ripple-button w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 text-white font-bold py-4 rounded-xl mt-6 transition-all border border-brand-500/30">Войти</button>
+      </div>
+      <div class="mt-8 text-center pt-6 border-t border-gray-800/60">
+        <button id="toggle-auth-mode-btn" class="text-gray-400 text-sm hover:text-white transition group">Нет аккаунта? <span class="text-brand-500 font-bold ml-1">Создать</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Smart Booking Modal -->
+  <div id="booking-modal" class="fixed inset-0 z-[2000] flex items-center justify-center px-4 hidden opacity-0 transition-opacity duration-300">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md" id="close-booking-modal-btn"></div>
+    <div class="glass-panel w-full max-w-md p-8 rounded-3xl relative z-10 transform scale-95 transition-transform duration-300 border border-brand-500/30 shadow-[0_0_50px_rgba(var(--brand-rgb),0.3)]" id="booking-modal-content">
+      <div class="flex justify-between items-start mb-6">
+        <div>
+          <h3 class="text-2xl font-black uppercase text-white tracking-wide">Умная Запись</h3>
+          <p id="booking-location-name" class="text-brand-400 text-sm font-bold mt-1">Локация</p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-brand-500/20 text-brand-400 flex items-center justify-center">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+      </div>
+      
+      <div class="space-y-6">
+        <!-- Dirt Level -->
+        <div>
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Состояние авто</p>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="cursor-pointer border border-gray-700/80 rounded-xl p-3 text-center hover:border-brand-500/50 transition-colors group relative overflow-hidden bg-gray-900/60">
+               <input type="radio" name="dirtLevel" value="Пыль" class="peer hidden" checked>
+               <div class="absolute inset-0 border-2 border-transparent peer-checked:border-brand-500 rounded-xl pointer-events-none"></div>
+               <span class="block text-xl mb-1">💨</span>
+               <span class="text-[10px] font-bold text-gray-400 peer-checked:text-white block">Легкое</span>
+            </label>
+            <label class="cursor-pointer border border-gray-700/80 rounded-xl p-3 text-center hover:border-brand-500/50 transition-colors group relative overflow-hidden bg-gray-900/60">
+               <input type="radio" name="dirtLevel" value="Грязь" class="peer hidden">
+               <div class="absolute inset-0 border-2 border-transparent peer-checked:border-brand-500 rounded-xl pointer-events-none"></div>
+               <span class="block text-xl mb-1">💦</span>
+               <span class="text-[10px] font-bold text-gray-400 peer-checked:text-white block">Среднее</span>
+            </label>
+            <label class="cursor-pointer border border-gray-700/80 rounded-xl p-3 text-center hover:border-brand-500/50 transition-colors group relative overflow-hidden bg-gray-900/60">
+               <input type="radio" name="dirtLevel" value="Мясо" class="peer hidden">
+               <div class="absolute inset-0 border-2 border-transparent peer-checked:border-brand-500 rounded-xl pointer-events-none"></div>
+               <span class="block text-xl mb-1">🦖</span>
+               <span class="text-[10px] font-bold text-gray-400 peer-checked:text-white block">Оффроад</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Drink/Compliment -->
+        <div>
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Напиток в VIP Lounge</p>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="cursor-pointer border border-gray-700/80 rounded-xl p-3 text-center hover:border-brand-500/50 transition-colors group relative overflow-hidden bg-gray-900/60">
+               <input type="radio" name="drinkPref" value="Кофе" class="peer hidden" checked>
+               <div class="absolute inset-0 border-2 border-transparent peer-checked:border-brand-500 rounded-xl pointer-events-none"></div>
+               <span class="block text-xl mb-1">☕️</span>
+               <span class="text-[10px] font-bold text-gray-400 peer-checked:text-white block">Кофе</span>
+            </label>
+            <label class="cursor-pointer border border-gray-700/80 rounded-xl p-3 text-center hover:border-brand-500/50 transition-colors group relative overflow-hidden bg-gray-900/60">
+               <input type="radio" name="drinkPref" value="Чай" class="peer hidden">
+               <div class="absolute inset-0 border-2 border-transparent peer-checked:border-brand-500 rounded-xl pointer-events-none"></div>
+               <span class="block text-xl mb-1">🍵</span>
+               <span class="text-[10px] font-bold text-gray-400 peer-checked:text-white block">Чай</span>
+            </label>
+            <label class="cursor-pointer border border-gray-700/80 rounded-xl p-3 text-center hover:border-brand-500/50 transition-colors group relative overflow-hidden bg-gray-900/60">
+               <input type="radio" name="drinkPref" value="Вода" class="peer hidden">
+               <div class="absolute inset-0 border-2 border-transparent peer-checked:border-brand-500 rounded-xl pointer-events-none"></div>
+               <span class="block text-xl mb-1">🧊</span>
+               <span class="text-[10px] font-bold text-gray-400 peer-checked:text-white block">Вода</span>
+            </label>
+          </div>
+        </div>
+        
+        <button id="confirm-booking-btn" class="ripple-button w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white font-bold py-4 rounded-xl mt-4 transition-all shadow-[0_0_20px_rgba(var(--brand-rgb),0.4)] border border-brand-500/30">Подтвердить запись</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/main.js" type="module"></script>
+  
+  <script>
+    // Cyber Cursor
+    const cyberCursor = document.getElementById('cyber-cursor');
+    const cyberCursorDot = document.getElementById('cyber-cursor-dot');
+    document.addEventListener('mousemove', (e) => {
+      cyberCursor.style.opacity = 1;
+      cyberCursorDot.style.opacity = 1;
+      cyberCursor.style.transform = `translate(${e.clientX - 12}px, ${e.clientY - 12}px)`;
+      cyberCursorDot.style.transform = `translate(${e.clientX - 3}px, ${e.clientY - 3}px)`;
+    });
+
+    // Intersection & UI
+    const revealElements = document.querySelectorAll('.reveal');
+    const exposeObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => { if(entry.isIntersecting) entry.target.classList.add('active'); });
+    }, { threshold: 0.1 });
+    revealElements.forEach(el => exposeObserver.observe(el));
+
+    // Tilt Effect
+    document.body.addEventListener('mousemove', (e) => {
+      const cards = document.querySelectorAll('.tilt-card');
+      cards.forEach(card => {
+        const rect = card.getBoundingClientRect();
+        if(e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+           const myX = (rect.left + rect.width / 2 - e.clientX) / 20;
+           const myY = -(rect.top + rect.height / 2 - e.clientY) / 20;
+           card.style.transform = `perspective(1000px) rotateY(${myX}deg) rotateX(${myY}deg) scale3d(1.04, 1.04, 1.04)`;
+        } else {
+           card.style.transform = `perspective(1000px) rotateY(0deg) rotateX(0deg) scale3d(1, 1, 1)`;
+        }
+      });
+      const bg = document.querySelector('.parallax-bg');
+      if(bg && window.innerWidth > 768) bg.style.backgroundPosition = `${e.pageX/30}px ${e.pageY/30}px`;
+    });
+    
+  </script>
+</body>
+</html>
